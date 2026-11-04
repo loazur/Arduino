@@ -1,12 +1,15 @@
 extends Tile
 
 # ---- CONSTANTES ----
-const DEVICE_NAME = "sensor_boiler"
+const DEVICE_NAME = "sensor_b"
 const SUB_HB = "hb_" + DEVICE_NAME
 ## Délai sans heartbeat au-delà duquel le capteur est considéré comme bloqué (3,5 périodes de 1 s).
 const HB_TIMEOUT_S := 3.5
 ## Durée d'allumage de l'icône de heartbeat à chaque réception.
 const HB_BLINK_S := 0.5
+
+const SUB_STATUS_COUNTER = "status_" + DEVICE_NAME + "_counter"
+const SUB_CMD_RESET_COUNTER = "cmd_" + DEVICE_NAME + "_reset_counter"
 
 # ---- VARIABLES ----
 var _node_id: int = -1
@@ -20,11 +23,16 @@ var _connected: bool = false:
 			_on_sensor_connected()
 		else:
 			_on_sensor_disconnected()
+			
+func _ready() -> void:
+	super()
+	%ResetButton.pressed.connect(func(): publish(SUB_CMD_RESET_COUNTER, PackedByteArray(), true))
 
 
 func get_subscriptions() -> PackedStringArray:
 	var subscriptions: PackedStringArray = []
 	subscriptions.append(SUB_HB)
+	subscriptions.append(SUB_STATUS_COUNTER)
 	return subscriptions
 
 
@@ -49,7 +57,9 @@ func on_gateway_reachability_changed(is_gateway_reachable: bool) -> void:
 func on_message(subject_name: String, source_id: int, _payload: PackedByteArray) -> void:
 	if subject_name == SUB_HB: _on_hb(source_id)
 	if source_id != _node_id: return # ne traitez que les messages dédiés à votre capteur
-	# Ajoutez vos messages à la suite
+	if subject_name == SUB_STATUS_COUNTER:
+		if _payload.size() != 4: return # le contrat : 4 octets, sinon on ignore
+		%CounterLabel.text = "Compteur : %d" % _payload.decode_u32(0)
 
 
 func _process(delta: float) -> void:

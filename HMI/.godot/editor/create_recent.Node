@@ -1,8 +1,8 @@
+Label
 Button
 StateIcon
 Panel
 ColorRect
-Label
 VBoxContainer
 Control
 RichTextLabel
@@ -12,4 +12,3 @@ Tile
 Container
 PanelContainer
 GridContainer
-ScrollContainer
