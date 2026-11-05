@@ -96,3 +96,19 @@ offset_top = 88.0
 offset_right = 240.0
 offset_bottom = 111.0
 text = "Counter ..."
+
+[node name="TemperatureLabel" type="Label" parent="." unique_id=1848960923]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 16.0
+offset_top = 120.0
+offset_right = 216.0
+offset_bottom = 143.0
+
+[node name="HumidityLabel" type="Label" parent="." unique_id=201729172]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 16.0
+offset_top = 152.0
+offset_right = 216.0
+offset_bottom = 175.0

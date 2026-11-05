@@ -10,6 +10,12 @@ const HB_BLINK_S := 0.5
 
 const SUB_STATUS_COUNTER = "status_" + DEVICE_NAME + "_counter"
 const SUB_CMD_RESET_COUNTER = "cmd_" + DEVICE_NAME + "_reset_counter"
+const SUB_STATUS_CLIMATE = "status_" + DEVICE_NAME + "_climate"
+
+const CLIMATE_PAYLOAD_SIZE := 4
+const TEMPERATURE_OFFSET := 0
+const HUMIDITY_OFFSET := 2
+const CENTI_PER_UNIT := 100.0
 
 # ---- VARIABLES ----
 var _node_id: int = -1
@@ -33,6 +39,7 @@ func get_subscriptions() -> PackedStringArray:
 	var subscriptions: PackedStringArray = []
 	subscriptions.append(SUB_HB)
 	subscriptions.append(SUB_STATUS_COUNTER)
+	subscriptions.append(SUB_STATUS_CLIMATE)
 	return subscriptions
 
 
@@ -60,7 +67,8 @@ func on_message(subject_name: String, source_id: int, _payload: PackedByteArray)
 	if subject_name == SUB_STATUS_COUNTER:
 		if _payload.size() != 4: return # le contrat : 4 octets, sinon on ignore
 		%CounterLabel.text = "Compteur : %d" % _payload.decode_u32(0)
-
+	if subject_name == SUB_STATUS_CLIMATE:
+		_on_climate(_payload)
 
 func _process(delta: float) -> void:
 	_seconds_since_hb += delta
@@ -86,3 +94,10 @@ func _on_hb(source_id: int):
 	if source_id != _node_id: return
 	_seconds_since_hb = 0.0
 	_connected = true
+	
+func _on_climate(payload: PackedByteArray) -> void:
+	if payload.size() != CLIMATE_PAYLOAD_SIZE: return
+	var temperature_degrees := payload.decode_s16(TEMPERATURE_OFFSET) / CENTI_PER_UNIT
+	var humidity_percent := payload.decode_u16(HUMIDITY_OFFSET) / CENTI_PER_UNIT
+	%TemperatureLabel.text = "Température : %.1f °C" % temperature_degrees
+	%HumidityLabel.text = "Humidité : %.0f %%" % humidity_percent
