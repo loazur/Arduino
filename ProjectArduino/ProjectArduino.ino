@@ -14,10 +14,10 @@ static_assert(sizeof(CounterPayload) == 4, "CounterPayload = 4 octets");
 
 // LED
 struct __attribute__((packed)) LEDPayload {
-  std::array<uint32_t, 3> ledColor;
+  std::array<uint8_t, 3> ledColor;
 };
 
-static_assert(sizeof(LEDPayload) == 4, "LEDPayload = 4 octets");
+static_assert(sizeof(LEDPayload) == 3, "LEDPayload = 3 octets");
 
 // ---- Variables globales ----
 static CounterPayload counter = {0};
@@ -35,9 +35,21 @@ constexpr mps::Subject kSubCmdResetLEDColor = mps::makeSubject("cmd_" DEVICE_NAM
 
 
 const std::vector<std::array<uint8_t, 3>> LED_COLORS = {
-  {255, 0, 0}, // Red
-  {0, 255, 0}, // Green
-  {0, 0, 255}  // Blue
+  {255,   0,   0}, // Red
+  {0,   255,   0}, // Green
+  {0,     0, 255}, // Blue
+  {255, 255,   0}, // Yellow
+  {0,   255, 255}, // Cyan
+  {255,   0, 255}, // Magenta
+  {255, 255, 255}, // White
+  {255, 128,   0}, // Orange
+  {255, 192, 203}, // Pink
+  {128,   0, 255}, // Purple
+  {0,   255, 128}, // Spring green
+  {0,   128, 255}, // Azure
+  {128, 255,   0}, // Lime
+  {255,   0, 128}, // Rose
+  {255, 215,   0}, // Gold
 };
 
 // ... ajoutez vos sujets ici sur le même schéma que le heartbeat, mais en précisant la donnée envoyée,
@@ -50,7 +62,9 @@ static void onSessionOpened() {
   Serial.println("Session opened!");
   
   MPS.publishValue(kSubStatusCounter, counter);
+
   MPS.publishValue(kSubStatusLEDColor, ledColor);
+  rgbLedWrite(2, ledColor.ledColor[0], ledColor.ledColor[1], ledColor.ledColor[2]);
 }
 
 // Appelé en cas d'échec d'envoi (callback)
@@ -75,7 +89,7 @@ static void onCmdRandomLEDColor(const mps::FrameView& message, void*){
   std::uniform_int_distribution<size_t> distrib(0, LED_COLORS.size() - 1);
 
   const auto& c = LED_COLORS[distrib(gen)];
-  ledColor.ledColor = {c[0], c[1], c[2]};   // conversion uint8_t -> uint32_t
+  ledColor.ledColor = {c[0], c[1], c[2]};  
   MPS.publishValue(kSubStatusLEDColor, ledColor);
 
   rgbLedWrite(2, ledColor.ledColor[0], ledColor.ledColor[1], ledColor.ledColor[2]);
