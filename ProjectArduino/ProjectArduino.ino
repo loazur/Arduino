@@ -17,6 +17,8 @@ struct __attribute__((packed)) LEDPayload {
   std::array<uint32_t, 3> ledColor;
 };
 
+static_assert(sizeof(LEDPayload) == 4, "LEDPayload = 4 octets");
+
 // ---- Variables globales ----
 static CounterPayload counter = {0};
 static LEDPayload ledColor = {0, 0, 0};

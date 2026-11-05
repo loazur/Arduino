@@ -72,6 +72,8 @@ func on_message(subject_name: String, source_id: int, _payload: PackedByteArray)
 		%CounterLabel.text = "Compteur : %d" % _payload.decode_u32(0)
 		
 	if subject_name == SUB_STATUS_LED_COLOR:
+		if _payload.size() != 4: return # le contrat : 4 octets, sinon on ignore
+		
 		var r := _payload.decode_u32(0)
 		var g := _payload.decode_u32(4)
 		var b := _payload.decode_u32(8)
