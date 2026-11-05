@@ -1,10 +1,10 @@
+Control
 Label
 Button
 StateIcon
 Panel
 ColorRect
 VBoxContainer
-Control
 RichTextLabel
 HBoxContainer
 TextureRect

@@ -8,9 +8,15 @@ const HB_TIMEOUT_S := 3.5
 ## Durée d'allumage de l'icône de heartbeat à chaque réception.
 const HB_BLINK_S := 0.5
 
+# Counter
 const SUB_STATUS_COUNTER = "status_" + DEVICE_NAME + "_counter"
 const SUB_CMD_RESET_COUNTER = "cmd_" + DEVICE_NAME + "_reset_counter"
 
+# LED Color
+const SUB_STATUS_LED_COLOR = "status_" + DEVICE_NAME + "_led_color"
+const SUB_CMD_RANDOM_LED_COLOR = "cmd_" + DEVICE_NAME + "_random_led_color"
+const SUB_CMD_RESET_LED_COLOR = "cmd_" + DEVICE_NAME + "_reset_led_color"
+ 
 # ---- VARIABLES ----
 var _node_id: int = -1
 var _seconds_since_hb := INF
@@ -26,13 +32,17 @@ var _connected: bool = false:
 			
 func _ready() -> void:
 	super()
-	%ResetButton.pressed.connect(func(): publish(SUB_CMD_RESET_COUNTER, PackedByteArray(), true))
+	
+	%ResetCounterButton.pressed.connect(func(): publish(SUB_CMD_RESET_COUNTER, PackedByteArray(), true))
+	%RandomColorButton.pressed.connect(func(): publish(SUB_CMD_RANDOM_LED_COLOR, PackedByteArray(), true))
+	%ResetColorButton.pressed.connect(func(): publish(SUB_CMD_RESET_LED_COLOR, PackedByteArray(), true))
 
 
 func get_subscriptions() -> PackedStringArray:
 	var subscriptions: PackedStringArray = []
 	subscriptions.append(SUB_HB)
 	subscriptions.append(SUB_STATUS_COUNTER)
+	subscriptions.append(SUB_STATUS_LED_COLOR)
 	return subscriptions
 
 
@@ -60,6 +70,12 @@ func on_message(subject_name: String, source_id: int, _payload: PackedByteArray)
 	if subject_name == SUB_STATUS_COUNTER:
 		if _payload.size() != 4: return # le contrat : 4 octets, sinon on ignore
 		%CounterLabel.text = "Compteur : %d" % _payload.decode_u32(0)
+		
+	if subject_name == SUB_STATUS_LED_COLOR:
+		var r := _payload.decode_u32(0)
+		var g := _payload.decode_u32(4)
+		var b := _payload.decode_u32(8)
+		%LEDColorLabel.text = "LEDColor: (%d, %d, %d)" % [r, g, b]
 
 
 func _process(delta: float) -> void:

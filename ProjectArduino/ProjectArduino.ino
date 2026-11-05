@@ -1,20 +1,42 @@
 #include <MPS.h>
 #include "config.h"
+#include <map>
+#include <string>
+#include <random>
 
 // ---- Structures de payloads ----
+// Counter
 struct __attribute__((packed)) CounterPayload {
   uint32_t value;
 };
 
 static_assert(sizeof(CounterPayload) == 4, "CounterPayload = 4 octets");
 
+// LED
+struct __attribute__((packed)) LEDPayload {
+  std::array<uint32_t, 3> ledColor;
+};
+
 // ---- Variables globales ----
 static CounterPayload counter = {0};
+static LEDPayload ledColor = {0, 0, 0};
 
 // ---- Subjects ----
 constexpr mps::Subject kSubHb = mps::makeSubject("hb_" DEVICE_NAME); // déjà présent
 constexpr mps::Subject kSubStatusCounter = mps::makeSubject("status_" DEVICE_NAME "_counter");
 constexpr mps::Subject kSubCmdResetCounter = mps::makeSubject("cmd_" DEVICE_NAME "_reset_counter");
+
+// Led Management
+constexpr mps::Subject kSubStatusLEDColor = mps::makeSubject("status_" DEVICE_NAME "_led_color");
+constexpr mps::Subject kSubCmdRandomLEDColor = mps::makeSubject("cmd_" DEVICE_NAME "_random_led_color");
+constexpr mps::Subject kSubCmdResetLEDColor = mps::makeSubject("cmd_" DEVICE_NAME "_reset_led_color");
+
+
+const std::vector<std::array<uint8_t, 3>> LED_COLORS = {
+  {255, 0, 0}, // Red
+  {0, 255, 0}, // Green
+  {0, 0, 255}  // Blue
+};
 
 // ... ajoutez vos sujets ici sur le même schéma que le heartbeat, mais en précisant la donnée envoyée,
 // par exemple : `constexpr mps::Subject kSubStatusSomeData = mps::makeSubject("status_" DEVICE_NAME "_some_data");`
@@ -24,7 +46,9 @@ constexpr mps::Subject kSubCmdResetCounter = mps::makeSubject("cmd_" DEVICE_NAME
 // Appelé lors de l'ouverture de la session (callback)
 static void onSessionOpened() {
   Serial.println("Session opened!");
+  
   MPS.publishValue(kSubStatusCounter, counter);
+  MPS.publishValue(kSubStatusLEDColor, ledColor);
 }
 
 // Appelé en cas d'échec d'envoi (callback)
@@ -37,6 +61,31 @@ static void onCmdResetCounter(const mps::FrameView& message, void*) {
   if (message.payloadLength != 0) return; // ce format n'a pas de payload
   counter.value = 0;
   MPS.publishValue(kSubStatusCounter, counter); // l'IHM voit le résultat réel
+}
+
+// LED Management
+
+static void onCmdRandomLEDColor(const mps::FrameView& message, void*){
+  if (message.payloadLength != 0) return;
+
+  // Random Generation
+  static std::mt19937 gen(std::random_device{}());
+  std::uniform_int_distribution<size_t> distrib(0, LED_COLORS.size() - 1);
+
+  const auto& c = LED_COLORS[distrib(gen)];
+  ledColor.ledColor = {c[0], c[1], c[2]};   // conversion uint8_t -> uint32_t
+  MPS.publishValue(kSubStatusLEDColor, ledColor);
+
+  rgbLedWrite(2, ledColor.ledColor[0], ledColor.ledColor[1], ledColor.ledColor[2]);
+}
+
+static void onCmdResetLEDColor(const mps::FrameView& message, void*){
+  if (message.payloadLength != 0) return;
+
+  ledColor = {0, 0, 0};
+  MPS.publishValue(kSubStatusLEDColor, ledColor);
+
+  rgbLedWrite(2, ledColor.ledColor[0], ledColor.ledColor[1], ledColor.ledColor[2]);
 }
 
 // ---- Fonctions appelées par setup/loop ----
@@ -72,7 +121,12 @@ void setup() {
     return;
   }
 
+  // Counter
   MPS.on(kSubCmdResetCounter, onCmdResetCounter);
+
+  // LED Color
+  MPS.on(kSubCmdRandomLEDColor, onCmdRandomLEDColor);
+  MPS.on(kSubCmdResetLEDColor, onCmdResetLEDColor);
 
   // démarrage du client MPS
   if(!MPS.begin(kGatewayMacAddress, DEVICE_NAME, kWifiChannel)) Serial.println("MPS: demarrage impossible");
