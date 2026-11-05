@@ -80,15 +80,12 @@ theme_override_fonts/font = ExtResource("7_f7tlc")
 theme_override_font_sizes/font_size = 20
 text = "node_id: ∅"
 
-[node name="ResetButton" type="Button" parent="." unique_id=860802987]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 256.0
-offset_top = 80.0
-offset_right = 328.0
-offset_bottom = 120.0
+[node name="CounterManagement" type="Control" parent="." unique_id=1415334491]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
 
-[node name="CounterLabel" type="Label" parent="." unique_id=530033592]
+[node name="CounterLabel" type="Label" parent="CounterManagement" unique_id=530033592]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 16.0
@@ -97,18 +94,62 @@ offset_right = 240.0
 offset_bottom = 111.0
 text = "Counter ..."
 
-[node name="TemperatureLabel" type="Label" parent="." unique_id=1848960923]
+[node name="ResetCounterButton" type="Button" parent="CounterManagement" unique_id=860802987]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 16.0
-offset_top = 120.0
-offset_right = 216.0
-offset_bottom = 143.0
+offset_left = 256.0
+offset_top = 80.0
+offset_right = 328.0
+offset_bottom = 120.0
 
-[node name="HumidityLabel" type="Label" parent="." unique_id=201729172]
+[node name="LEDColorManagement" type="Control" parent="." unique_id=863003580]
+anchors_preset = 0
+offset_top = 48.0
+offset_right = 40.0
+offset_bottom = 88.0
+
+[node name="LEDColorLabel" type="Label" parent="LEDColorManagement" unique_id=340053904]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 16.0
-offset_top = 152.0
-offset_right = 216.0
-offset_bottom = 175.0
+offset_top = 88.0
+offset_right = 240.0
+offset_bottom = 111.0
+text = "LEDColor = {0, 0, 0}"
+
+[node name="RandomColorButton" type="Button" parent="LEDColorManagement" unique_id=1367490116]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 256.0
+offset_top = 88.0
+offset_right = 288.0
+offset_bottom = 120.0
+
+[node name="ResetColorButton" type="Button" parent="LEDColorManagement" unique_id=1356469706]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 296.0
+offset_top = 88.0
+offset_right = 328.0
+offset_bottom = 120.0
+
+[node name="TempHumManagement" type="Control" parent="." unique_id=1302060705]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="TemperatureLabel" type="Label" parent="TempHumManagement" unique_id=521792880]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 169.0
+offset_right = 250.0
+offset_bottom = 192.0
+
+[node name="HumidityLabel" type="Label" parent="TempHumManagement" unique_id=783170778]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 196.0
+offset_right = 250.0
+offset_bottom = 219.0

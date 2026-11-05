@@ -1,6 +1,9 @@
 #include <MPS.h>
 #include <DHT.h>
 #include "config.h"
+#include <map>
+#include <string>
+#include <random>
 
 // ---- Constantes DHT11 ----
 constexpr uint8_t kDhtPin = 0;
@@ -8,6 +11,7 @@ constexpr uint32_t kClimatePeriodMs = 2000; // période de lecture du DHT11
 constexpr float kCentiPerUnit = 100.0f; // convertion centième
 
 // ---- Structures de payloads ----
+// Counter
 struct __attribute__((packed)) CounterPayload {
   uint32_t value;
 };
@@ -22,8 +26,16 @@ struct __attribute__((packed)) ClimatePayload {
 
 static_assert(sizeof(ClimatePayload) == 4, "ClimatePayload = 4 octets");
 
+// LED
+struct __attribute__((packed)) LEDPayload {
+  std::array<uint8_t, 3> ledColor;
+};
+
+static_assert(sizeof(LEDPayload) == 3, "LEDPayload = 3 octets");
+
 // ---- Variables globales ----
 static CounterPayload counter = {0};
+static LEDPayload ledColor = {0, 0, 0};
 static ClimatePayload climate = {0, 0};
 static bool hasClimateReading = false;
 static DHT dht(kDhtPin, DHT11); 
@@ -34,6 +46,30 @@ constexpr mps::Subject kSubStatusCounter = mps::makeSubject("status_" DEVICE_NAM
 constexpr mps::Subject kSubCmdResetCounter = mps::makeSubject("cmd_" DEVICE_NAME "_reset_counter");
 constexpr mps::Subject kSubStatusClimate = mps::makeSubject("status_" DEVICE_NAME "_climate");
 
+// Led Management
+constexpr mps::Subject kSubStatusLEDColor = mps::makeSubject("status_" DEVICE_NAME "_led_color");
+constexpr mps::Subject kSubCmdRandomLEDColor = mps::makeSubject("cmd_" DEVICE_NAME "_random_led_color");
+constexpr mps::Subject kSubCmdResetLEDColor = mps::makeSubject("cmd_" DEVICE_NAME "_reset_led_color");
+
+
+const std::vector<std::array<uint8_t, 3>> LED_COLORS = {
+  {255,   0,   0}, // Red
+  {0,   255,   0}, // Green
+  {0,     0, 255}, // Blue
+  {255, 255,   0}, // Yellow
+  {0,   255, 255}, // Cyan
+  {255,   0, 255}, // Magenta
+  {255, 255, 255}, // White
+  {255, 128,   0}, // Orange
+  {255, 192, 203}, // Pink
+  {128,   0, 255}, // Purple
+  {0,   255, 128}, // Spring green
+  {0,   128, 255}, // Azure
+  {128, 255,   0}, // Lime
+  {255,   0, 128}, // Rose
+  {255, 215,   0}, // Gold
+};
+
 // ... ajoutez vos sujets ici sur le même schéma que le heartbeat, mais en précisant la donnée envoyée,
 // par exemple : `constexpr mps::Subject kSubStatusSomeData = mps::makeSubject("status_" DEVICE_NAME "_some_data");`
 // ou : `constexpr mps::Subject kSubCmdSomeOrder = mps::makeSubject("cmd_" DEVICE_NAME "_some_order");`
@@ -42,8 +78,12 @@ constexpr mps::Subject kSubStatusClimate = mps::makeSubject("status_" DEVICE_NAM
 // Appelé lors de l'ouverture de la session (callback)
 static void onSessionOpened() {
   Serial.println("Session opened!");
+  
   MPS.publishValue(kSubStatusCounter, counter);
   if (hasClimateReading) MPS.publishValue(kSubStatusClimate, climate);
+
+  MPS.publishValue(kSubStatusLEDColor, ledColor);
+  rgbLedWrite(2, ledColor.ledColor[0], ledColor.ledColor[1], ledColor.ledColor[2]);
 }
 
 // Appelé en cas d'échec d'envoi (callback)
@@ -56,6 +96,31 @@ static void onCmdResetCounter(const mps::FrameView& message, void*) {
   if (message.payloadLength != 0) return; // ce format n'a pas de payload
   counter.value = 0;
   MPS.publishValue(kSubStatusCounter, counter); // l'IHM voit le résultat réel
+}
+
+// LED Management
+
+static void onCmdRandomLEDColor(const mps::FrameView& message, void*){
+  if (message.payloadLength != 0) return;
+
+  // Random Generation
+  static std::mt19937 gen(std::random_device{}());
+  std::uniform_int_distribution<size_t> distrib(0, LED_COLORS.size() - 1);
+
+  const auto& c = LED_COLORS[distrib(gen)];
+  ledColor.ledColor = {c[0], c[1], c[2]};  
+  MPS.publishValue(kSubStatusLEDColor, ledColor);
+
+  rgbLedWrite(2, ledColor.ledColor[0], ledColor.ledColor[1], ledColor.ledColor[2]);
+}
+
+static void onCmdResetLEDColor(const mps::FrameView& message, void*){
+  if (message.payloadLength != 0) return;
+
+  ledColor = {0, 0, 0};
+  MPS.publishValue(kSubStatusLEDColor, ledColor);
+
+  rgbLedWrite(2, ledColor.ledColor[0], ledColor.ledColor[1], ledColor.ledColor[2]);
 }
 
 // ---- Fonctions appelées par setup/loop ----
@@ -111,7 +176,12 @@ void setup() {
     return;
   }
 
+  // Counter
   MPS.on(kSubCmdResetCounter, onCmdResetCounter);
+
+  // LED Color
+  MPS.on(kSubCmdRandomLEDColor, onCmdRandomLEDColor);
+  MPS.on(kSubCmdResetLEDColor, onCmdResetLEDColor);
 
   // démarrage du client MPS
   if(!MPS.begin(kGatewayMacAddress, DEVICE_NAME, kWifiChannel)) Serial.println("MPS: demarrage impossible");
