@@ -11,21 +11,26 @@ const HB_BLINK_S := 0.5
 # Counter
 const SUB_STATUS_COUNTER = "status_" + DEVICE_NAME + "_counter"
 const SUB_CMD_RESET_COUNTER = "cmd_" + DEVICE_NAME + "_reset_counter"
-const SUB_STATUS_CLIMATE = "status_" + DEVICE_NAME + "_climate"
-
-const CLIMATE_PAYLOAD_SIZE := 4
-const TEMPERATURE_OFFSET := 0
-const HUMIDITY_OFFSET := 2
-const CENTI_PER_UNIT := 100.0
 
 # LED Color
 const SUB_STATUS_LED_COLOR = "status_" + DEVICE_NAME + "_led_color"
 const SUB_CMD_RANDOM_LED_COLOR = "cmd_" + DEVICE_NAME + "_random_led_color"
 const SUB_CMD_RESET_LED_COLOR = "cmd_" + DEVICE_NAME + "_reset_led_color"
+
+# Humidity/Temperature
+const SUB_STATUS_CLIMATE = "status_" + DEVICE_NAME + "_climate"
+const CLIMATE_PAYLOAD_SIZE := 4
+const TEMPERATURE_OFFSET := 0
+const HUMIDITY_OFFSET := 2
+const CENTI_PER_UNIT := 100.0
+const CLIMATE_TIMEOUT_S := 7.0
+const STALE_MODULATE := Color(1, 1, 1, 0.4)
+const FRESH_MODULATE := Color.WHITE
  
 # ---- VARIABLES ----
 var _node_id: int = -1
 var _seconds_since_hb := INF
+var _seconds_since_climate := INF
 # Variable "_connected" avec setter personnalisé pour appeler la MAJ de l'UI au changement d'état
 var _connected: bool = false:
 	set(value):
@@ -38,6 +43,8 @@ var _connected: bool = false:
 			
 func _ready() -> void:
 	super()
+	
+	_apply_connection_state(false)
 	
 	%ResetCounterButton.pressed.connect(func(): publish(SUB_CMD_RESET_COUNTER, PackedByteArray(), true))
 	%RandomColorButton.pressed.connect(func(): publish(SUB_CMD_RANDOM_LED_COLOR, PackedByteArray(), true))
@@ -94,16 +101,20 @@ func _process(delta: float) -> void:
 	%HeartbeatIcon.state = _seconds_since_hb < HB_BLINK_S
 	if _connected and _seconds_since_hb >= HB_TIMEOUT_S:
 		_connected = false  # plus de heartbeat : code du capteur bloqué ou capteur hors de portée
-
+	_seconds_since_climate += delta
+	var climate_fresh := _connected and _seconds_since_climate < CLIMATE_TIMEOUT_S
+	%TempHumManagement.modulate = FRESH_MODULATE if climate_fresh else STALE_MODULATE
 
 func _on_sensor_connected():
 	%IDLabel.text = "node_id: %d" % _node_id
 	%ConnectedIcon.state = true
+	_apply_connection_state(true)
 
 
 func _on_sensor_disconnected():
 	%IDLabel.text = "node_id: ∅"
 	%ConnectedIcon.state = false
+	_apply_connection_state(false)
 
 ## @brief Traite un heartbeat : (re)connecte le capteur et relance la temporisation.
 ## @param source_id  Identifiant de l'appareil émetteur.
@@ -120,3 +131,12 @@ func _on_climate(payload: PackedByteArray) -> void:
 	var humidity_percent := payload.decode_u16(HUMIDITY_OFFSET) / CENTI_PER_UNIT
 	%TemperatureLabel.text = "Température : %.1f °C" % temperature_degrees
 	%HumidityLabel.text = "Humidité : %.0f %%" % humidity_percent
+	_seconds_since_climate = 0.0
+
+func _apply_connection_state(sensor_online: bool) -> void:
+	var tint := FRESH_MODULATE if sensor_online else STALE_MODULATE
+	%LEDColorManagement.modulate = tint
+	%CounterManagement.modulate = tint
+	%ResetCounterButton.disabled = not sensor_online
+	%RandomColorButton.disabled = not sensor_online
+	%ResetColorButton.disabled = not sensor_online
