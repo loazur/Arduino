@@ -98,10 +98,10 @@ text = "Counter ..."
 [node name="ResetCounterButton" type="Button" parent="CounterManagement" unique_id=860802987]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 256.0
-offset_top = 80.0
-offset_right = 328.0
-offset_bottom = 120.0
+offset_left = 264.0
+offset_top = 88.0
+offset_right = 320.0
+offset_bottom = 110.0
 
 [node name="LEDColorManagement" type="Control" parent="." unique_id=863003580]
 unique_name_in_owner = true
@@ -114,26 +114,26 @@ offset_bottom = 88.0
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 16.0
-offset_top = 88.0
+offset_top = 72.0
 offset_right = 240.0
-offset_bottom = 111.0
+offset_bottom = 95.0
 text = "LEDColor = {0, 0, 0}"
 
 [node name="RandomColorButton" type="Button" parent="LEDColorManagement" unique_id=1367490116]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 256.0
-offset_top = 88.0
+offset_left = 264.0
+offset_top = 72.0
 offset_right = 288.0
-offset_bottom = 120.0
+offset_bottom = 96.0
 
 [node name="ResetColorButton" type="Button" parent="LEDColorManagement" unique_id=1356469706]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 296.0
-offset_top = 88.0
-offset_right = 328.0
-offset_bottom = 120.0
+offset_top = 72.0
+offset_right = 320.0
+offset_bottom = 96.0
 
 [node name="TempHumManagement" type="Control" parent="." unique_id=1302060705]
 unique_name_in_owner = true
@@ -144,15 +144,17 @@ offset_bottom = 40.0
 [node name="TemperatureLabel" type="Label" parent="TempHumManagement" unique_id=521792880]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 18.0
-offset_top = 169.0
-offset_right = 250.0
-offset_bottom = 192.0
+offset_left = 16.0
+offset_top = 152.0
+offset_right = 248.0
+offset_bottom = 175.0
+text = "Temperature ..."
 
 [node name="HumidityLabel" type="Label" parent="TempHumManagement" unique_id=783170778]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 18.0
-offset_top = 196.0
-offset_right = 250.0
-offset_bottom = 219.0
+offset_left = 16.0
+offset_top = 184.0
+offset_right = 248.0
+offset_bottom = 207.0
+text = "Humidity ..."
