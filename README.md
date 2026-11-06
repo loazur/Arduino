@@ -166,12 +166,3 @@ Le `node_id` du capteur est obtenu en priorité par l'annonce de la passerelle (
 | Période du compteur | 2 s |
 | Période de lecture du DHT11 | 2 s |
 | Délai avant péremption de la mesure climatique | 7 s |
-
----
-
-## Ajouter un nouveau subject
-
-1. Définir la structure du payload côté Arduino (`__attribute__((packed))` + `static_assert` sur la taille) et le `mps::Subject` correspondant.
-2. Enregistrer le callback avec `MPS.on(...)` dans `setup()` (pour une commande) ou publier avec `MPS.publishValue(...)` (pour un état).
-3. Côté Godot : déclarer la constante, l'ajouter à `get_subscriptions()` (pour un état) et traiter le message dans `on_message()` en vérifiant la taille.
-4. **Mettre à jour ce README** pour que le contrat reste cohérent avec le code.
