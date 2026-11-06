@@ -45,6 +45,7 @@ func _notification(what: int) -> void:
 		var cell := _cell_size()
 		var i := 0
 		for c in _get_visible_children():
+			@warning_ignore("integer_division")
 			var col := i / rows   # division entière
 			var row := i % rows
 			fit_child_in_rect(c, Rect2(

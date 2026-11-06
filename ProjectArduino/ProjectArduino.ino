@@ -48,31 +48,8 @@ constexpr mps::Subject kSubStatusClimate = mps::makeSubject("status_" DEVICE_NAM
 
 // Led Management
 constexpr mps::Subject kSubStatusLEDColor = mps::makeSubject("status_" DEVICE_NAME "_led_color");
-constexpr mps::Subject kSubCmdRandomLEDColor = mps::makeSubject("cmd_" DEVICE_NAME "_random_led_color");
+constexpr mps::Subject kSubSetLEDColor = mps::makeSubject("set_" DEVICE_NAME "_led_color");
 constexpr mps::Subject kSubCmdResetLEDColor = mps::makeSubject("cmd_" DEVICE_NAME "_reset_led_color");
-
-
-const std::vector<std::array<uint8_t, 3>> LED_COLORS = {
-  {255,   0,   0}, // Red
-  {0,   255,   0}, // Green
-  {0,     0, 255}, // Blue
-  {255, 255,   0}, // Yellow
-  {0,   255, 255}, // Cyan
-  {255,   0, 255}, // Magenta
-  {255, 255, 255}, // White
-  {255, 128,   0}, // Orange
-  {255, 192, 203}, // Pink
-  {128,   0, 255}, // Purple
-  {0,   255, 128}, // Spring green
-  {0,   128, 255}, // Azure
-  {128, 255,   0}, // Lime
-  {255,   0, 128}, // Rose
-  {255, 215,   0}, // Gold
-};
-
-// ... ajoutez vos sujets ici sur le même schéma que le heartbeat, mais en précisant la donnée envoyée,
-// par exemple : `constexpr mps::Subject kSubStatusSomeData = mps::makeSubject("status_" DEVICE_NAME "_some_data");`
-// ou : `constexpr mps::Subject kSubCmdSomeOrder = mps::makeSubject("cmd_" DEVICE_NAME "_some_order");`
 
 // ---- Callbacks ----
 // Appelé lors de l'ouverture de la session (callback)
@@ -100,27 +77,23 @@ static void onCmdResetCounter(const mps::FrameView& message, void*) {
 
 // LED Management
 
-static void onCmdRandomLEDColor(const mps::FrameView& message, void*){
-  if (message.payloadLength != 0) return;
+static void onSetLEDColor(const mps::FrameView& message, void*){
+  LEDPayload payload;
+  if (!mps::readPayloadAs(message, &payload)) return;
 
-  // Random Generation
-  static std::mt19937 gen(std::random_device{}());
-  std::uniform_int_distribution<size_t> distrib(0, LED_COLORS.size() - 1);
+  ledColor = payload; 
 
-  const auto& c = LED_COLORS[distrib(gen)];
-  ledColor.ledColor = {c[0], c[1], c[2]};  
-  MPS.publishValue(kSubStatusLEDColor, ledColor);
-
-  rgbLedWrite(2, ledColor.ledColor[0], ledColor.ledColor[1], ledColor.ledColor[2]);
+  rgbLedWrite(2, payload.ledColor[0], payload.ledColor[1], payload.ledColor[2]);
+  MPS.publishValue(kSubStatusLEDColor, payload);
 }
 
 static void onCmdResetLEDColor(const mps::FrameView& message, void*){
   if (message.payloadLength != 0) return;
 
   ledColor = {0, 0, 0};
-  MPS.publishValue(kSubStatusLEDColor, ledColor);
-
+  
   rgbLedWrite(2, ledColor.ledColor[0], ledColor.ledColor[1], ledColor.ledColor[2]);
+  MPS.publishValue(kSubStatusLEDColor, ledColor);
 }
 
 // ---- Fonctions appelées par setup/loop ----
@@ -180,7 +153,7 @@ void setup() {
   MPS.on(kSubCmdResetCounter, onCmdResetCounter);
 
   // LED Color
-  MPS.on(kSubCmdRandomLEDColor, onCmdRandomLEDColor);
+  MPS.on(kSubSetLEDColor, onSetLEDColor);
   MPS.on(kSubCmdResetLEDColor, onCmdResetLEDColor);
 
   // démarrage du client MPS

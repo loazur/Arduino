@@ -20,9 +20,9 @@ const CENTI_PER_UNIT := 100.0
 
 # LED Color
 const SUB_STATUS_LED_COLOR = "status_" + DEVICE_NAME + "_led_color"
-const SUB_CMD_RANDOM_LED_COLOR = "cmd_" + DEVICE_NAME + "_random_led_color"
+const SUB_SET_LED_COLOR = "set_" + DEVICE_NAME + "_led_color"
 const SUB_CMD_RESET_LED_COLOR = "cmd_" + DEVICE_NAME + "_reset_led_color"
- 
+
 # ---- VARIABLES ----
 var _node_id: int = -1
 var _seconds_since_hb := INF
@@ -36,11 +36,29 @@ var _connected: bool = false:
 		else:
 			_on_sensor_disconnected()
 			
+var LED_COLORS: Array[PackedByteArray] = [
+	PackedByteArray([255,   0,   0]), # Red
+	PackedByteArray([  0, 255,   0]), # Green
+	PackedByteArray([  0,   0, 255]), # Blue
+	PackedByteArray([255, 255,   0]), # Yellow
+	PackedByteArray([  0, 255, 255]), # Cyan
+	PackedByteArray([255,   0, 255]), # Magenta
+	PackedByteArray([255, 255, 255]), # White
+	PackedByteArray([255, 128,   0]), # Orange
+	PackedByteArray([255, 192, 203]), # Pink
+	PackedByteArray([128,   0, 255]), # Purple
+	PackedByteArray([  0, 255, 128]), # Spring green
+	PackedByteArray([  0, 128, 255]), # Azure
+	PackedByteArray([128, 255,   0]), # Lime
+	PackedByteArray([255,   0, 128]), # Rose
+	PackedByteArray([255, 215,   0]), # Gold
+]
+			
 func _ready() -> void:
 	super()
 	
 	%ResetCounterButton.pressed.connect(func(): publish(SUB_CMD_RESET_COUNTER, PackedByteArray(), true))
-	%RandomColorButton.pressed.connect(func(): publish(SUB_CMD_RANDOM_LED_COLOR, PackedByteArray(), true))
+	%RandomColorButton.pressed.connect(_on_random_color_button_pressed)
 	%ResetColorButton.pressed.connect(func(): publish(SUB_CMD_RESET_LED_COLOR, PackedByteArray(), true))
 
 
@@ -88,7 +106,11 @@ func on_message(subject_name: String, source_id: int, _payload: PackedByteArray)
 		var b := _payload.decode_u8(2)
 		%LEDColorLabel.text = "LEDColor: (%d, %d, %d)" % [r, g, b]
 
+func _on_random_color_button_pressed() -> void:
+	var color: PackedByteArray = LED_COLORS.pick_random()
 
+	publish(SUB_SET_LED_COLOR, color, true)
+	
 func _process(delta: float) -> void:
 	_seconds_since_hb += delta
 	%HeartbeatIcon.state = _seconds_since_hb < HB_BLINK_S
